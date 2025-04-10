@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  # FastAPI app service
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - CASSANDRA_KEYSPACE=messenger
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  
+  # Cassandra database
+  cassandra:
+    image: cassandra:latest
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MessengerCluster
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  cassandra_data: 

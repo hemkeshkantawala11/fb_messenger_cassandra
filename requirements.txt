@@ -1,0 +1,9 @@
+fastapi>=0.108.0
+uvicorn>=0.25.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+cassandra-driver>=3.28.0  # Cassandra driver
+python-dateutil>=2.8.2    # For date handling
+sqlalchemy>=2.0.25        # For database operations
+pytest>=7.4.0             # For testing
+httpx>=0.25.0             # For testing 
