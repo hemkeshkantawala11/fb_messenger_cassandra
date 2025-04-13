@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from app.db.cassandra_client import cassandra_client
 import logging
 from cassandra.query import SimpleStatement
-
+from app.schemas.error import HTTPValidationError, ValidationErrorItem
 
 
 logger = logging.getLogger(__name__)

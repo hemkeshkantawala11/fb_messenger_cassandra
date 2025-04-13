@@ -8,6 +8,7 @@ from app.api.routes import message_router, conversation_router
 from app.controllers.message_controller import MessageController
 from app.controllers.conversation_controller import ConversationController
 from app.db.cassandra_client import cassandra_client
+from app.middlewares.error_middleware import error_handling_middleware
 
 # Configure logging
 logging.basicConfig(
@@ -30,6 +31,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.middleware("http")(error_handling_middleware)
+
 
 # Dependency injection
 def get_message_controller():
