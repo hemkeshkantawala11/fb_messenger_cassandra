@@ -1,11 +1,12 @@
 from fastapi import HTTPException, status
-
+from app.models.cassandra_models import ConversationModel
 from app.schemas.conversation import ConversationResponse, PaginatedConversationResponse
+import logging
 
+logger = logging.getLogger(__name__)   
 class ConversationController:
     """
     Controller for handling conversation operations
-    This is a stub that students will implement
     """
     
     async def get_user_conversations(
@@ -28,11 +29,22 @@ class ConversationController:
         Raises:
             HTTPException: If user not found or access denied
         """
-        # This is a stub - students will implement the actual logic
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Method not implemented"
-        )
+        try:
+            # Fetch conversations and total count from the model
+            conversations, total = await ConversationModel.get_user_conversations(user_id, page, limit)
+            
+            # Construct the paginated response
+            return PaginatedConversationResponse(
+                total=total,
+                page=page,
+                limit=limit,
+                data=[ConversationResponse(**conv) for conv in conversations]
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to fetch user conversations: {str(e)}"
+            )
     
     async def get_conversation(self, conversation_id: int) -> ConversationResponse:
         """
@@ -47,8 +59,35 @@ class ConversationController:
         Raises:
             HTTPException: If conversation not found or access denied
         """
-        # This is a stub - students will implement the actual logic
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Method not implemented"
-        ) 
+        try:
+            # Fetch conversation details from the model
+            conversation = await ConversationModel.get_conversation(conversation_id)
+            
+            logger.info(f"Conversation fetched: {conversation}")
+            # Check if conversation exists
+            if not conversation:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Conversation with ID {conversation_id} not found"
+                )
+            
+            # Return conversation response
+
+            message = ConversationResponse(
+                id = conversation["conversation_id"],
+                user1_id = conversation["sender_id"],
+                user2_id = conversation["receiver_id"],
+                last_message_at = conversation["last_message_at"],
+                last_message_content = conversation["last_message_content"]
+            )
+            return message
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            # Handle other exceptions
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to fetch conversation: {str(e)}"
+            )

@@ -53,15 +53,71 @@ def create_tables(session):
     """
     Create the tables for the application.
     
-    This is where students will define the table schemas based on the requirements.
+    This function creates the necessary tables to implement:
+    - Sending messages between users
+    - Fetching user conversations ordered by recent activity
+    - Fetching all messages in a conversation
+    - Fetching messages before a given timestamp (for pagination)
     """
     logger.info("Creating tables...")
     
-    # TODO: Students should implement table creation
-    # Hint: Consider:
-    # - What tables are needed to implement the required APIs?
-    # - What should be the primary keys and clustering columns?
-    # - How will you handle pagination and time-based queries?
+    # Messages table - stores all messages with conversation_id as partition key
+    # This allows efficient retrieval of all messages in a conversation
+    # Clustering by timestamp DESC allows fetching recent messages first and pagination
+    session.execute("""DROP TABLE IF EXISTS messenger.user_conversations;""")
+    session.execute("""
+    CREATE TABLE IF NOT EXISTS user_conversations (
+        sender_id INT,
+        receiver_id INT,
+        conversation_id INT,
+        last_timestamp TIMESTAMP,
+        last_message TEXT,
+        PRIMARY KEY (conversation_id)
+    );
+    """)
+    logger.info("Created user_conversations table")
+    
+    # Conversation participants table - tracks who is in each conversation
+    # This allows checking if a user is part of a conversation
+    session.execute("""DROP TABLE IF EXISTS messenger.messages;""")
+    session.execute("""
+    CREATE TABLE IF NOT EXISTS messages (
+        conversation_id INT,
+        timestamp TIMESTAMP,
+        message_id INT,
+        content TEXT,
+        sender_id INT,
+        receiver_id INT,
+        PRIMARY KEY (conversation_id, timestamp, message_id)
+    ) WITH CLUSTERING ORDER BY (timestamp DESC, message_id ASC);
+    """)
+    logger.info("Created messages table")
+    
+    # User conversations table - allows quick lookup of a user's conversations
+    # Ordered by last_message_at DESC to get most recent conversations first
+    session.execute("""DROP TABLE IF EXISTS messenger.conversations;""")
+    session.execute("""
+    CREATE TABLE IF NOT EXISTS conversations (
+        conversation_id INT,
+        sender_id INT,
+        receiver_id INT,
+        last_timestamp TIMESTAMP,
+        PRIMARY KEY (conversation_id, sender_id));
+    """)
+    logger.info("Created conversations table")
+    
+   
+    # Counter table for generating sequential IDs
+    # This helps with creating sequential IDs for messages and conversations
+    session.execute("""DROP TABLE IF EXISTS messenger.counters;""")
+    session.execute("""
+    CREATE TABLE IF NOT EXISTS counters (
+        counter_name TEXT,
+        counter_value COUNTER,
+        PRIMARY KEY (counter_name)
+    );
+    """)
+    logger.info("Created counters table")
     
     logger.info("Tables created successfully.")
 

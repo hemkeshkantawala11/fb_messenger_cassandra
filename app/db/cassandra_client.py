@@ -57,28 +57,18 @@ class CassandraClient:
             self.cluster.shutdown()
             logger.info("Cassandra connection closed")
     
-    def execute(self, query: str, params: dict = None) -> List[Dict[str, Any]]:
-        """
-        Execute a CQL query.
-        
-        Args:
-            query: The CQL query string
-            params: The parameters for the query
-            
-        Returns:
-            List of rows as dictionaries
-        """
+    async def execute(self, query: str, params: tuple = None):
         if not self.session:
             self.connect()
-        
+    
         try:
-            statement = SimpleStatement(query)
-            result = self.session.execute(statement, params or {})
-            return list(result)
+            # Use the synchronous execute method - this is fine in FastAPI
+            # as long as the database operations aren't too slow
+            return self.session.execute(query, params or ())
         except Exception as e:
             logger.error(f"Query execution failed: {str(e)}")
             raise
-    
+        
     def execute_async(self, query: str, params: dict = None):
         """
         Execute a CQL query asynchronously.
